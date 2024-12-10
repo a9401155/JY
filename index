@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>銀行與收支管理系統</title>
+    <style>
+     body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+    }
+    h1, h2 {
+        text-align: center;
+        font-size: 1.5rem;
+    }
+    button {
+        margin: 10px;
+        padding: 10px 20px;
+        cursor: pointer;
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+.button-container {
+    display: inline-flex; /* 使用flex使按鈕在同一排 */
+    gap: 10px; /* 讓兩個按鈕之間有間距 */
+}
+
+    button:hover {
+        background-color: #45a049;
+    }
+    .section {
+        display: none;
+        padding: 20px;
+        background-color: white;
+        border-radius: 5px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    .active {
+        display: block;
+    }
+    .form-group {
+        margin-bottom: 15px;
+    }
+    .form-group label {
+        display: block;
+        margin-bottom: 5px;
+    }
+    .form-group input,
+    .form-group select {
+        width: 100%;
+        padding: 10px;
+        font-size: 1rem;
+        margin-top: 5px;
+        box-sizing: border-box;
+    }
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+    }
+    table th,
+    table td {
+        border: 1px solid #ddd;
+        padding: 10px;
+        text-align: center;
+    }
+
+    /* 類型顏色 */
+    .income { color: green; }
+    .expense { color: red; }
+    .transfer { color: blue; }
+
+    /* 響應式設計 */
+    @media (max-width: 600px) {
+        h1 {
+            font-size: 1.2rem;
+        }
+        button {
+            font-size: 0.9rem;
+        }
+        .form-group input,
+        .form-group select {
+            font-size: 0.9rem;
+        }
+        table th, table td {
+            font-size: 0.9rem;
+        }
+    }
+    </style>
+</head>
+<body>
+<h1>銀行與收支管理系統</h1>
+<div style="display: flex; gap: 10px;">
+    <button onclick="showSection('accountManagement')">帳戶管理</button>
+    <button onclick="showSection('recordManagement')">收支管理</button>
+    <button onclick="exportData()">導出資料</button>
+    <button onclick="importData()">導入資料</button>
+    <button onclick="clearData()">刪除所有資料</button>
+</div>
+
+   <!-- 帳戶管理區 -->
+    <div id="accountManagement" class="section active">
+        <h2>帳戶管理</h2>
+        <form id="accountForm">
+            <div class="form-group">
+                <label for="accountType">帳戶類型</label>
+                <select id="accountType" onchange="toggleAccountFields()">
+                    <option value="bank">銀行帳戶</option>
+                    <option value="credit">信用卡</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="accountName">帳戶名稱</label>
+                <input type="text" id="accountName" placeholder="輸入帳戶名稱">
+            </div>
+            <div class="form-group">
+                <label for="accountBalance">初始餘額</label>
+                <input type="number" id="accountBalance" placeholder="輸入初始餘額">
+            </div>
+            <div class="form-group" id="bankFields">
+                <label for="freeTransfers">免費轉帳次數</label>
+                <input type="number" id="freeTransfers" placeholder="輸入免費轉帳次數">
+            </div>
+            <div class="form-group" id="creditFields" style="display: none;">
+                <label for="deductionDate">每月扣款日</label>
+                <input type="number" id="deductionDate" placeholder="輸入每月扣款日 (1-31)">
+            </div>
+            <button type="button" onclick="addAccount()">新增帳戶</button>
+        </form>
+        <div id="accountInfo"></div>
+    </div>
+
+    <!-- 收支管理區 -->
+    <div id="recordManagement" class="section">
+        <h2>收支管理</h2>
+        <form id="recordForm">
+            <div class="form-group">
+                <label for="recordType">類型</label>
+                <select id="recordType" onchange="updateCategoryOptions()">
+                    <option value="income">收入</option>
+                    <option value="expense">支出</option>
+                    <option value="transfer">轉帳</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="recordCategory">分類</label>
+                <select id="recordCategory"></select>
+            </div>
+            <div class="form-group">
+                <label for="recordDate">日期</label>
+                <input type="date" id="recordDate">
+            </div>
+            <div class="form-group">
+                <label for="recordAccount">選擇帳戶</label>
+                <select id="recordAccount" onchange="showAccountDetails()"></select>
+            </div>
+            <div class="form-group" id="accountDetails" style="margin-top: 10px;"></div>
+            <div class="form-group">
+                <label for="recordAmount">金額</label>
+                <input type="number" id="recordAmount" placeholder="輸入金額">
+            </div>
+            <div class="form-group">
+                <label for="recordNote">備註</label>
+                <input type="text" id="recordNote" placeholder="輸入備註 (選填)">
+            </div>
+            <button type="button" onclick="addRecord()">新增記錄</button>
+        </form>
+        <table>
+            <thead>
+                <tr>
+                    <th>日期</th>
+                    <th>類型</th>
+                    <th>分類</th>
+                    <th>金額</th>
+                    <th>帳戶</th>
+                    <th>備註</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody id="recordList"></tbody>
+        </table>
+    </div>
+
+    <script>
+        let accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+        let records = JSON.parse(localStorage.getItem('records')) || [];
+        const categories = {
+            income: ["薪資收入", "投資收入", "兼職收入", "租金收入", "利息收入", "獎金/年終", "其他收入"],
+            expense: ["食品類", "居住類", "交通類", "娛樂類", "購物類", "醫療類", "教育類", "社交類", "儲蓄與投資"],
+            transfer: ["食品類", "居住類", "交通類", "娛樂類", "購物類", "醫療類", "教育類", "社交類", "儲蓄與投資"]
+        };
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+            document.getElementById(sectionId).classList.add('active');
+        }
+
+        function toggleAccountFields() {
+            const type = document.getElementById('accountType').value;
+            document.getElementById('bankFields').style.display = type === 'bank' ? 'block' : 'none';
+            document.getElementById('creditFields').style.display = type === 'credit' ? 'block' : 'none';
+        }
+
+        function addAccount() {
+            const type = document.getElementById('accountType').value;
+            const name = document.getElementById('accountName').value;
+            const balance = parseFloat(document.getElementById('accountBalance').value);
+            const freeTransfers = parseInt(document.getElementById('freeTransfers').value, 10);
+            const deductionDate = parseInt(document.getElementById('deductionDate').value, 10);
+
+            if (!name || isNaN(balance) || (type === 'bank' && isNaN(freeTransfers)) || (type === 'credit' && isNaN(deductionDate))) {
+                alert("請填寫完整的帳戶資訊！");
+                return;
+            }
+
+            const newAccount = { 
+                id: Date.now().toString(), 
+                name, 
+                type, 
+                balance, 
+                freeTransfers: type === 'bank' ? freeTransfers : null, 
+                deductionDate: type === 'credit' ? deductionDate : null 
+            };
+            accounts.push(newAccount);
+            localStorage.setItem('accounts', JSON.stringify(accounts));
+            
+            updateAccountInfo();
+            updateAccountOptions();
+            alert("帳戶已新增！");
+        }
+
+function updateAccountInfo() {
+    const accountInfo = document.getElementById('accountInfo');
+    accountInfo.innerHTML = accounts.map((acc, index) => `
+        <p> ${acc.type === 'bank' ? '銀行帳戶' : '信用卡'} - ${acc.name}  餘額：${acc.balance}${acc.type === 'bank' ? ` - 免費轉帳次數：${acc.freeTransfers}` : ` - 扣款日：${acc.deductionDate}`}</p>
+        <div class="button-container">
+            <button onclick="editAccount(${index})">編輯</button>
+            <button onclick="deleteAccount(${index})">刪除</button>
+        </div>
+    `).join("");
+}
+
+function editAccount(index) {
+    const account = accounts[index];
+    // 顯示帳戶資訊到表單中，讓使用者可以編輯
+    document.getElementById('accountType').value = account.type;
+    document.getElementById('accountName').value = account.name;
+    document.getElementById('accountBalance').value = account.balance;
+    document.getElementById('freeTransfers').value = account.freeTransfers || '';
+    document.getElementById('deductionDate').value = account.deductionDate || '';
+
+    // 修改新增帳戶按鈕為更新按鈕
+    const addButton = document.querySelector('button[type="button"]');
+    addButton.innerText = '更新帳戶';
+    addButton.onclick = function() {
+        updateAccount(index);
+    };
+}
+
+function updateAccount(index) {
+    const type = document.getElementById('accountType').value;
+    const name = document.getElementById('accountName').value;
+    const balance = parseFloat(document.getElementById('accountBalance').value);
+    const freeTransfers = parseInt(document.getElementById('freeTransfers').value, 10);
+    const deductionDate = parseInt(document.getElementById('deductionDate').value, 10);
+
+    if (!name || isNaN(balance) || (type === 'bank' && isNaN(freeTransfers)) || (type === 'credit' && isNaN(deductionDate))) {
+        alert("請填寫完整的帳戶資訊！");
+        return;
+    }
+
+    const updatedAccount = { 
+        id: accounts[index].id, 
+        name, 
+        type, 
+        balance, 
+        freeTransfers: type === 'bank' ? freeTransfers : null, 
+        deductionDate: type === 'credit' ? deductionDate : null 
+    };
+    accounts[index] = updatedAccount;
+    localStorage.setItem('accounts', JSON.stringify(accounts));
+
+    updateAccountInfo();
+    updateAccountOptions();  // 更新帳戶選項
+    alert("帳戶已更新！");
+    
+    // 恢復新增帳戶按鈕
+    document.querySelector('button[type="button"]').innerText = '新增帳戶';
+    document.querySelector('button[type="button"]').onclick = addAccount;
+}
+
+function deleteAccount(index) {
+    if (confirm("確定要刪除此帳戶嗎？")) {
+        accounts.splice(index, 1); // 刪除帳戶
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+        updateAccountInfo();
+        updateAccountOptions();  // 更新帳戶選項
+        alert("帳戶已刪除！");
+    }
+}
+
+function updateAccountOptions() {
+    const accountSelect = document.getElementById('recordAccount');
+    accountSelect.innerHTML = accounts.map(acc => `
+        <option value="${acc.id}">${acc.type === 'bank' ? '銀行帳戶' : '信用卡'} - ${acc.name} - 餘額: ${acc.balance}元${acc.type === 'bank' ? ` - 免費轉帳次數：${acc.freeTransfers}` : ` - 扣款日：${acc.deductionDate}`}</option>
+    `).join("");
+}
+
+        function updateCategoryOptions() {
+            const recordType = document.getElementById('recordType').value;
+            const categorySelect = document.getElementById('recordCategory');
+            const categoriesForType = categories[recordType];
+            categorySelect.innerHTML = categoriesForType.map(cat => `
+                <option value="${cat}">${cat}</option>
+            `).join("");
+        }
+ 
+        function addRecord() {
+            const type = document.getElementById('recordType').value;
+            const category = document.getElementById('recordCategory').value;
+            const date = document.getElementById('recordDate').value;
+            const amount = parseFloat(document.getElementById('recordAmount').value);
+            const accountId = document.getElementById('recordAccount').value;
+            const note = document.getElementById('recordNote').value;
+
+            if (!date || isNaN(amount) || amount <= 0 || !category || !accountId) {
+                alert("請填寫完整且有效的記錄資訊！");
+                return;
+            }
+
+    // 讀取帳戶資料，確保資料是最新的
+    accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+
+    // 找到選擇的帳戶
+    const account = accounts.find(acc => acc.id === accountId);
+    if (account) {
+        // 更新帳戶餘額
+        if (type === "income") {
+            account.balance += amount;
+        } else if (type === "expense") {
+            if (account.balance >= amount) {
+                account.balance -= amount;
+            } else {
+                alert("餘額不足，無法進行支出！");
+                return;
+            }
+        }
+
+        // 新增收支記錄，並將備註儲存
+        const newRecord = { type, category, date, amount, accountId, note };
+        records.push(newRecord);
+
+        // 儲存更新後的帳戶與記錄資料到 localStorage
+        localStorage.setItem('accounts', JSON.stringify(accounts));
+        localStorage.setItem('records', JSON.stringify(records));
+
+        // 更新頁面上的資料
+        updateAccountInfo();
+        updateRecordList();
+        updateAccountOptions(); // 刷新帳戶選項
+
+        alert("記錄已新增！");
+    } else {
+        alert("找不到選擇的帳戶！");
+    }
+}
+
+
+function updateRecordList() {
+    const recordList = document.getElementById('recordList');
+    recordList.innerHTML = records.map((rec, index) => {
+        const account = accounts.find(acc => acc.id === rec.accountId);
+        let typeClass = "";
+        let amountDisplay = rec.amount;
+        
+        if (rec.type === "income") {
+            typeClass = "income";
+        } else if (rec.type === "expense") {
+            typeClass = "expense";
+            amountDisplay = -rec.amount; // 為支出類型的金額加上負號
+        } else if (rec.type === "transfer") {
+            typeClass = "transfer";
+        }
+
+        return `
+            <tr class="${typeClass}">
+                <td>${rec.date}</td>
+                <td>${rec.type === "income" ? "收入" : rec.type === "expense" ? "支出" : "轉帳"}</td>
+                <td>${rec.category}</td>
+                <td>${amountDisplay}</td> <!-- 顯示更新後的金額 -->
+                <td>${account.name}</td>
+                <td>${rec.note || ''}</td>
+                <td>
+                    <div class="button-container">
+                        <button onclick="editRecord(${index})">編輯</button>
+                        <button onclick="deleteRecord(${index})">刪除</button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join("");
+}
+
+
+
+function editRecord(index) {
+    const record = records[index];
+    // 顯示記錄資訊到表單中，讓使用者可以編輯
+    document.getElementById('recordType').value = record.type;
+    updateCategoryOptions();  // 重新更新類別選項，根據類型
+    document.getElementById('recordCategory').value = record.category;
+    document.getElementById('recordDate').value = record.date;
+    document.getElementById('recordAmount').value = record.amount;
+    document.getElementById('recordAccount').value = record.accountId;
+
+    // 修改新增記錄按鈕為更新按鈕
+    const addButton = document.querySelector('#recordForm button');
+    addButton.innerText = '更新記錄';
+    addButton.onclick = function() {
+        updateRecord(index);
+    };
+}
+function updateRecord(index) {
+    const type = document.getElementById('recordType').value;
+    const category = document.getElementById('recordCategory').value;
+    const date = document.getElementById('recordDate').value;
+    const amount = parseFloat(document.getElementById('recordAmount').value);
+    const accountId = document.getElementById('recordAccount').value;
+    const note = document.getElementById('recordNote').value;  // 新增備註欄位
+
+    if (!date || isNaN(amount) || amount <= 0 || !category || !accountId) {
+        alert("請填寫完整且有效的記錄資訊！");
+        return;
+    }
+
+    const updatedRecord = { type, category, date, amount, accountId, note };
+
+    // 找到原記錄的帳戶
+    const record = records[index];
+    const oldAccount = accounts.find(acc => acc.id === record.accountId);
+
+    // 找到更新後的帳戶
+    const newAccount = accounts.find(acc => acc.id === accountId);
+
+    // 更新帳戶餘額
+    if (oldAccount) {
+        if (oldAccount.balance >= record.amount) {
+            oldAccount.balance += (record.type === "income" ? -record.amount : record.amount);
+        } else {
+            alert("餘額不足，無法刪除該記錄！");
+            return;
+        }
+    }
+
+    if (newAccount) {
+        if (newAccount.balance >= amount) {
+            newAccount.balance += (type === "income" ? amount : -amount);
+        } else {
+            alert("餘額不足，無法更新該記錄！");
+            return;
+        }
+    }
+
+    // 更新記錄
+    records[index] = updatedRecord;
+
+    // 儲存更新後的帳戶與記錄資料到 localStorage
+    localStorage.setItem('accounts', JSON.stringify(accounts));
+    localStorage.setItem('records', JSON.stringify(records));
+
+    // 更新頁面
+    updateRecordList();
+    updateAccountInfo();
+    updateAccountOptions();  // 更新帳戶選項
+
+    alert("記錄已更新！");
+}
+
+
+function deleteRecord(index) {
+    if (confirm("確定要刪除此記錄嗎？")) {
+        const record = records[index];
+        const account = accounts.find(acc => acc.id === record.accountId);
+
+        if (account) {
+            if (record.type === "income") {
+                account.balance -= record.amount;
+            } else if (record.type === "expense") {
+                account.balance += record.amount;
+            }
+
+            // 刪除記錄
+            records.splice(index, 1); // 刪除記錄
+            localStorage.setItem('records', JSON.stringify(records));
+            localStorage.setItem('accounts', JSON.stringify(accounts));  // 儲存帳戶資料
+
+            updateRecordList();
+            updateAccountInfo();
+            updateAccountOptions();  // 更新帳戶選項
+            alert("記錄已刪除！");
+        }
+    }
+}
+
+
+// 導出資料
+function exportData() {
+    const data = {
+        accounts: accounts,
+        records: records
+    };
+    const dataStr = JSON.stringify(data);
+    const blob = new Blob([dataStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "data.json";
+    a.click();
+    URL.revokeObjectURL(url);
+}
+
+// 導入資料
+function importData() {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = function (event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const importedData = JSON.parse(e.target.result);
+            accounts = importedData.accounts || [];
+            records = importedData.records || [];
+            localStorage.setItem('accounts', JSON.stringify(accounts));
+            localStorage.setItem('records', JSON.stringify(records));
+            updateAccountInfo();
+            updateRecordList();
+            alert("資料已成功導入！");
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+// 刪除所有資料
+function clearData() {
+    if (confirm("確定要刪除所有資料嗎？")) {
+        localStorage.removeItem('accounts');
+        localStorage.removeItem('records');
+        accounts = [];
+        records = [];
+        updateAccountInfo();
+        updateRecordList();
+        alert("所有資料已刪除！");
+    }
+}
+
+    // 更新收支管理中的類型選項，加入轉帳選項
+    function updateTypeOptions() {
+        const recordTypeSelect = document.getElementById('recordType');
+        recordTypeSelect.innerHTML = `
+            <option value="income">收入</option>
+            <option value="expense">支出</option>
+            <option value="transfer">轉帳</option>
+        `;
+    }
+
+    // 確保初始化時正確顯示所有類型
+    window.onload = function() {
+        accounts = JSON.parse(localStorage.getItem('accounts')) || [];
+        records = JSON.parse(localStorage.getItem('records')) || [];
+        updateTypeOptions(); // 初始化類型選項
+        updateCategoryOptions(); // 初始化分類選項
+        updateAccountInfo();
+        updateAccountOptions();
+        updateRecordList();
+    };
+    </script>
+</body>
+</html>
