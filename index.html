@@ -144,9 +144,6 @@
             <div class="form-group">
                 <label for="recordType">類型</label>
                 <select id="recordType" onchange="updateCategoryOptions()">
-                    <option value="income">收入</option>
-                    <option value="expense">支出</option>
-                    <option value="transfer">轉帳</option>
                 </select>
             </div>
             <div class="form-group">
@@ -356,10 +353,13 @@ function updateAccountOptions() {
         if (type === "income") {
             account.balance += amount;
         } else if (type === "expense") {
-            if (account.balance >= amount) {
                 account.balance -= amount;
+        } else if (type === "transfer") {
+                if (account.freeTransfers > 0) {
+                    account.freeTransfers -= 1;
+                    account.balance -= amount;
             } else {
-                alert("餘額不足，無法進行支出！");
+                alert("餘額&轉帳次數已用盡，無法進行支出！");
                 return;
             }
         }
@@ -398,6 +398,7 @@ function updateRecordList() {
             amountDisplay = -rec.amount; // 為支出類型的金額加上負號
         } else if (rec.type === "transfer") {
             typeClass = "transfer";
+            amountDisplay = -rec.amount; // 為支出類型的金額加上負號
         }
 
         return `
@@ -486,10 +487,18 @@ function updateRecord(index) {
     localStorage.setItem('accounts', JSON.stringify(accounts));
     localStorage.setItem('records', JSON.stringify(records));
 
+    // 清除金額
+    document.getElementById('recordAmount').value = '';
+
     // 更新頁面
     updateRecordList();
     updateAccountInfo();
     updateAccountOptions();  // 更新帳戶選項
+
+    // 更新頁面後，將新增記錄按鈕恢復為原來的狀態
+    const addButton = document.querySelector('#recordForm button');
+    addButton.innerText = '新增記錄';
+    addButton.onclick = addRecord;
 
     alert("記錄已更新！");
 }
@@ -505,6 +514,9 @@ function deleteRecord(index) {
                 account.balance -= record.amount;
             } else if (record.type === "expense") {
                 account.balance += record.amount;
+            } else if (record.type === "transfer") {
+                account.balance += record.amount;
+                account.freeTransfers += 1; // 恢復可免費轉帳次數
             }
 
             // 刪除記錄
