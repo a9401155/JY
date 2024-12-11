@@ -258,6 +258,9 @@ function editAccount(index) {
     document.getElementById('freeTransfers').value = account.freeTransfers || '';
     document.getElementById('deductionDate').value = account.deductionDate || '';
 
+    // 確保顯示對應的欄位
+    toggleAccountFields();
+
     // 修改新增帳戶按鈕為更新按鈕
     const addButton = document.querySelector('button[type="button"]');
     addButton.innerText = '更新帳戶';
@@ -296,6 +299,12 @@ function updateAccount(index) {
     // 恢復新增帳戶按鈕
     document.querySelector('button[type="button"]').innerText = '新增帳戶';
     document.querySelector('button[type="button"]').onclick = addAccount;
+
+    // 清空表單欄位
+    document.getElementById('accountName').value = '';
+    document.getElementById('accountBalance').value = '';
+    document.getElementById('freeTransfers').value = '';
+    document.getElementById('deductionDate').value = '';
 }
 
 function deleteAccount(index) {
