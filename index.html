@@ -46,18 +46,22 @@
         display: block;
     }
     .form-group {
+    display: flex;
+    align-items: center;
         margin-bottom: 15px;
     }
     .form-group label {
         display: block;
-        margin-bottom: 5px;
+    flex: 0 0 150px; /* 固定寬度，根據需要調整 */
+    margin-bottom: 0; /* 移除 block 樣式下的下間距 */
     }
     .form-group input,
     .form-group select {
+        flex: 1; /* 讓輸入框自動填滿剩餘空間 */
         width: 100%;
         padding: 10px;
         font-size: 1rem;
-        margin-top: 5px;
+        margin-top: 0; /* 確保對齊 */
         box-sizing: border-box;
     }
     table {
