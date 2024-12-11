@@ -368,6 +368,9 @@ function updateAccountOptions() {
             }
         }
 
+        // 清除金額和日期欄位
+        document.getElementById('recordAmount').value = '';
+
         // 新增收支記錄，並將備註儲存
         const newRecord = { type, category, date, amount, accountId, note };
         records.push(newRecord);
@@ -389,6 +392,9 @@ function updateAccountOptions() {
 
 
 function updateRecordList() {
+    // 將 records 根據日期排序
+    records.sort((a, b) => new Date(a.date) - new Date(b.date));
+
     const recordList = document.getElementById('recordList');
     recordList.innerHTML = records.map((rec, index) => {
         const account = accounts.find(acc => acc.id === rec.accountId);
