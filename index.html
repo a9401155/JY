@@ -420,7 +420,7 @@ function addRecord() {
     }
 }
 
-function editRecord(index) {
+function editRecord(index) { 
     const record = records[index];
     // 顯示記錄資訊到表單中，讓使用者可以編輯
     document.getElementById('recordType').value = record.type; // 將記錄的類型 (收入、支出等) 填入對應的輸入框
@@ -430,7 +430,7 @@ function editRecord(index) {
     document.getElementById('recordAmount').value = record.amount; // 將記錄的金額填入對應的金額輸入框
     document.getElementById('recordAccount').value = record.accountId; // 將記錄的帳戶 ID 填入對應的帳戶選擇框
 
-    if (confirm("確定要更改此記錄嗎？")) {
+    if (confirm("此操作會移除此筆紀錄，確定要更改此記錄嗎？")) {
         const record = records[index];
         const account = accounts.find(acc => acc.id === record.accountId);
 
@@ -452,8 +452,13 @@ function editRecord(index) {
             updateRecordList();
             updateAccountInfo();
             updateAccountOptions();  // 更新帳戶選項
-            alert("請變更資料！");
-        }
+            alert("請變更資料！");        } 
+    } else {
+        document.getElementById('recordType').value = '';
+        document.getElementById('recordCategory').value = '';
+        document.getElementById('recordDate').value = '';
+        document.getElementById('recordAmount').value = '';
+        document.getElementById('recordAccount').value = '';
     }
 }
 
